@@ -15,7 +15,7 @@ import com.va.voucher_request.dto.Voucher;
 import com.va.voucher_request.exceptions.NoVoucherPresentException;
 import com.va.voucher_request.exceptions.NotFoundException;
 import com.va.voucher_request.exceptions.ParticularVoucherIsAlreadyAssignedException;
-import com.va.voucher_request.exceptions.ResourceNotFoundException;
+import com.va.voucher_request.exceptions.ResourceAlreadyExistException;
 import com.va.voucher_request.exceptions.ScoreNotValidException;
 import com.va.voucher_request.exceptions.VoucherIsAlreadyAssignedException;
 import com.va.voucher_request.exceptions.VoucherNotFoundException;
@@ -25,22 +25,25 @@ import com.va.voucher_request.repo.VoucherRequestRepository;
 
 @Service
 @EnableFeignClients(basePackages = "com.*")
+
 public class VoucherReqServiceImpl implements VoucherReqService {
 
 	@Autowired
 	private VoucherRequestRepository vrepo;
-	
+
 	@Autowired
 	VoucherClient voucherClient;
 
 	@Override
-	public VoucherRequest requestVoucher(VoucherRequestDto request) throws ScoreNotValidException, ResourceNotFoundException {
+	public VoucherRequest requestVoucher(VoucherRequestDto request) throws ScoreNotValidException, ResourceAlreadyExistException {
 		String userEmail = request.getCandidateEmail();
-	    String examName = request.getCloudExam();
-	    boolean examExists = vrepo.existsByCloudExamAndCandidateEmail(examName, userEmail);
-	    if (examExists) {
-	            throw new ResourceNotFoundException("The exam already exists in the database with a result status of Pass or Pending for this user.");
-	    }
+		String examName = request.getCloudExam();
+		boolean examExists = vrepo.existsByCloudExamAndCandidateEmail(examName, userEmail);
+
+		if (examExists) {
+			throw new ResourceAlreadyExistException(
+					"You have already requested voucher for this particular exam");
+		}
 		VoucherRequest vreq = new VoucherRequest();
 		if (request.getDoSelectScore() >= 80) {
 			String requestID = UUID.randomUUID().toString();
@@ -77,7 +80,6 @@ public class VoucherReqServiceImpl implements VoucherReqService {
 	public VoucherRequest updateExamDate(String voucherCode, LocalDate newExamDate) throws NotFoundException {
 		VoucherRequest voucherRequest = vrepo.findByVoucherCode(voucherCode);
 		if (voucherRequest != null) {
-			 //LocalDate incrementedDate = newExamDate.plusDays(1);
 			voucherRequest.setPlannedExamDate(newExamDate);
 			try {
 				vrepo.save(voucherRequest);
@@ -117,95 +119,85 @@ public class VoucherReqServiceImpl implements VoucherReqService {
 	}
 
 	@Override
-	public VoucherRequest assignVoucher(String voucherId, String emailId,String voucherrequestId) throws VoucherNotFoundException, NotFoundException, VoucherIsAlreadyAssignedException, ParticularVoucherIsAlreadyAssignedException {
-		
+	public VoucherRequest assignVoucher(String voucherId, String emailId, String voucherrequestId)
+			throws VoucherNotFoundException, NotFoundException, VoucherIsAlreadyAssignedException,
+			ParticularVoucherIsAlreadyAssignedException {
+
 		Voucher voucher = voucherClient.getVoucherById(voucherId).getBody();
-		
-		if(voucher==null)
-		{
+
+		if (voucher == null) {
 			throw new VoucherNotFoundException();
 		}
-		
-		if(voucher.getIssuedTo()!=null)
-		{
+
+		if (voucher.getIssuedTo() != null) {
 			throw new ParticularVoucherIsAlreadyAssignedException();
 		}
-		
+
 		Optional<VoucherRequest> voucherRequest = vrepo.findById(voucherrequestId);
-		if(voucherRequest.isEmpty())
-		{
+		if (voucherRequest.isEmpty()) {
 			throw new NotFoundException("Voucher Request is Not Found");
 		}
-		
-		
+
 		VoucherRequest request = voucherRequest.get();
-		
-		if(request.getVoucherCode()!=null)
-		{
+
+		if (request.getVoucherCode() != null) {
 			throw new VoucherIsAlreadyAssignedException();
 		}
 		request.setVoucherCode(voucher.getVoucherCode());
 		request.setVoucherExpiryLocalDate(voucher.getExpiryDate());
 		request.setVoucherIssueLocalDate(LocalDate.now());
-		
+
 		voucherClient.assignUserInVoucher(voucherId, emailId);
 		VoucherRequest v = vrepo.save(request);
 
 		return v;
-}
+	}
 
 	@Override
 	public List<VoucherRequest> getAllVoucherRequest() throws VoucherNotFoundException {
-		
+
 		List<VoucherRequest> allRequest = vrepo.findAll();
-		
-		if(allRequest.isEmpty())
-		{
+
+		if (allRequest.isEmpty()) {
 			throw new VoucherNotFoundException();
 		}
-		
+
 		return allRequest;
 	}
 
 	@Override
 	public List<VoucherRequest> getAllAssignedVoucherRequest() throws NoVoucherPresentException {
 		List<VoucherRequest> allrequest = vrepo.findAll();
-		
+
 		List<VoucherRequest> assignedvouchers = new ArrayList<VoucherRequest>();
-		
-		if(allrequest.isEmpty())
-		{
+
+		if (allrequest.isEmpty()) {
 			throw new NoVoucherPresentException();
 		}
-		for(VoucherRequest v:allrequest)
-		{
-			if(v.getVoucherCode()!=null)
-			{
+		for (VoucherRequest v : allrequest) {
+			if (v.getVoucherCode() != null) {
 				assignedvouchers.add(v);
 			}
 		}
-		
+
 		return assignedvouchers;
 	}
 
 	@Override
 	public List<VoucherRequest> getAllNotAssignedVoucherRequest() throws NoVoucherPresentException {
 		List<VoucherRequest> allrequest = vrepo.findAll();
-		
+
 		List<VoucherRequest> notassignedvouchers = new ArrayList<VoucherRequest>();
-		
-		if(allrequest.isEmpty())
-		{
+
+		if (allrequest.isEmpty()) {
 			throw new NoVoucherPresentException();
 		}
-		for(VoucherRequest v:allrequest)
-		{
-			if(v.getVoucherCode()==null)
-			{
+		for (VoucherRequest v : allrequest) {
+			if (v.getVoucherCode() == null) {
 				notassignedvouchers.add(v);
 			}
 		}
-		
+
 		return notassignedvouchers;
 	}
 
