@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="MavenProjectImportWizardPage">
+		<list key="rootDirectory">
+			<item value="C:\Users\MPOGULA\Desktop\final voucher\backend\user-service"/>
+			<item value="C:\Users\MPOGULA\Desktop\Voucher-candidate\backend\user-service"/>
+			<item value="C:\Users\MPOGULA\Desktop\Voucher-candidate\backend\VoucherRequestService"/>
+			<item value="C:\Users\MPOGULA\Desktop\Voucher-candidate\backend\voucherservice"/>
+			<item value="C:\Users\MPOGULA\Desktop\Voucher-candidate\backend\API-Gateway"/>
+			<item value="C:\Users\MPOGULA\Desktop\Voucher-candidate\backend\EurekaServer"/>
+		</list>
+		<list key="projectNameTemplate">
+			<item value="[artifactId]-TRUNK"/>
+			<item value="[artifactId]"/>
+			<item value="[artifactId]-[version]"/>
+			<item value="[groupId].[artifactId]"/>
+			<item value="[groupId].[artifactId]-[version]"/>
+			<item value="[name]"/>
+		</list>
+	</section>
+	<section name="org.eclipse.m2e.core.pom.overview">
+	</section>
+	<section name="org.eclipse.m2e.core.pom.dependencies">
+	</section>
+</section>

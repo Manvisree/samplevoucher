@@ -1,0 +1,10 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017
+      database: vouchers
+  application:
+    name: voucher-request
+
+server:
+  port: 8081
